@@ -1,1 +1,363 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DomikBot - Панель управления</title>
+    <style>
+        /* Базовые стили и переменные тем */
+        :root {
+            --bg-color: #121212;
+            --text-color: #ffffff;
+            --panel-bg: #1e1e1e;
+            --accent: #9146FF; /* Twitch color */
+            --tile-bg: #333333;
+            --tile-text: #ffffff;
+        }
 
+        [data-theme="light"] {
+            --bg-color: #f4f4f9;
+            --text-color: #333333;
+            --panel-bg: #ffffff;
+            --accent: #6441a5;
+            --tile-bg: #e0e0e0;
+            --tile-text: #333333;
+        }
+
+        [data-theme="neon"] {
+            --bg-color: #050505;
+            --text-color: #00ffcc;
+            --panel-bg: #111111;
+            --accent: #ff00ff;
+            --tile-bg: #1a1a1a;
+            --tile-text: #00ffcc;
+        }
+
+        [data-theme="ocean"] {
+            --bg-color: #0b3c5d;
+            --text-color: #d9b310;
+            --panel-bg: #1d2731;
+            --accent: #328cc1;
+            --tile-bg: #328cc1;
+            --tile-text: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            overflow-x: hidden;
+            transition: background-color 0.5s, color 0.5s;
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .active-screen {
+            display: flex;
+        }
+
+        /* Экран входа и Экран приветствия */
+        .split-container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        .left-side, .right-side {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: transform 1s cubic-bezier(0.68, -0.55, 0.265, 1.55), opacity 1s ease;
+        }
+
+        .title { font-size: 5rem; font-weight: bold; margin: 0; }
+        .subtitle { font-size: 1.2rem; opacity: 0.7; margin-top: -10px; }
+        
+        .btn {
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            background-color: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            transition: transform 0.2s, background-color 0.3s;
+        }
+        .btn:hover { transform: scale(1.05); filter: brightness(1.2); }
+
+        /* Радужный переливающийся текст */
+        .rainbow-text {
+            background: linear-gradient(270deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: rainbow-shift 5s ease infinite;
+            font-size: 4rem;
+            font-weight: bold;
+            text-align: center;
+        }
+        @keyframes rainbow-shift { 
+            0% { background-position: 0% 50% } 
+            50% { background-position: 100% 50% } 
+            100% { background-position: 0% 50% } 
+        }
+
+        /* Выбор темы */
+        select {
+            padding: 10px;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            border: 1px solid var(--accent);
+            background: var(--panel-bg);
+            color: var(--text-color);
+        }
+
+        /* Анимации ухода */
+        .slide-left { transform: translateX(-100vw); opacity: 0; }
+        .slide-right { transform: translateX(100vw); opacity: 0; }
+
+        /* Дашборд */
+        #dashboard {
+            display: none;
+            flex-direction: row;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: var(--panel-bg);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+        }
+
+        .sidebar h2 { margin-bottom: 30px; text-align: center; color: var(--accent); }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 1.1rem;
+            text-align: left;
+            cursor: pointer;
+            padding: 15px;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+        .tab-btn:hover, .tab-btn.active {
+            background-color: var(--accent);
+            color: #fff;
+        }
+
+        .content {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+        }
+
+        .tab-content { display: none; animation: fadeIn 0.5s; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Плитки Windows 8.1 */
+        .tiles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .tile {
+            background-color: var(--tile-bg);
+            color: var(--tile-text);
+            height: 140px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.2s;
+            padding: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .tile:hover {
+            transform: scale(0.95); /* Эффект нажатия как в Windows 8 */
+            box-shadow: 0 2px 3px rgba(0,0,0,0.2);
+        }
+        
+        /* Специфичные цвета для плиток, чтобы было как на скрине */
+        .tile:nth-child(2n) { background-color: #2d89ef; color: white;}
+        .tile:nth-child(3n) { background-color: #00a300; color: white;}
+        .tile:nth-child(5n) { background-color: #ffc40d; color: black;}
+        .tile:nth-child(7n) { background-color: #9f00a7; color: white;}
+        .tile:nth-child(11n) { background-color: #ee1111; color: white;}
+        .tile i { font-size: 2rem; margin-bottom: 10px; display: block; }
+
+    </style>
+</head>
+<body>
+
+    <!-- Экран 1: Вход -->
+    <div id="screen-login" class="screen active-screen">
+        <div class="split-container">
+            <div class="left-side">
+                <h1 class="title">DomikBot</h1>
+                <p class="subtitle">самый лучший бот для твич</p>
+            </div>
+            <div class="right-side">
+                <button class="btn" onclick="goToWelcome()">Вход по Twitch</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Экран 2: Приветствие и выбор темы -->
+    <div id="screen-welcome" class="screen">
+        <div class="split-container">
+            <div id="welcome-left" class="left-side">
+                <!-- Радужный текст -->
+                <div class="rainbow-text">Привет, домик!</div>
+            </div>
+            <div id="welcome-right" class="right-side">
+                <h2>Выбор темы:</h2>
+                <select id="theme-selector" onchange="changeTheme(this.value)">
+                    <option value="dark">Темная (Рекомендуемая)</option>
+                    <option value="light">Светлая</option>
+                    <option value="neon">Неон</option>
+                    <option value="ocean">Океан</option>
+                </select>
+                <button class="btn" onclick="goToDashboard()">Далее</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Экран 3: Дашборд -->
+    <div id="dashboard">
+        <div class="sidebar">
+            <h2>DomikBot</h2>
+            <button class="tab-btn active" onclick="switchTab('tab-settings')">Настройка бота твич</button>
+            <button class="tab-btn" onclick="switchTab('tab-apps')">Полезные функции</button>
+            <button class="tab-btn" onclick="switchTab('tab-global')">Настройки</button>
+        </div>
+        
+        <div class="content">
+            <!-- Вкладка: Настройка бота твич -->
+            <div id="tab-settings" class="tab-content active">
+                <h1>Настройки бота</h1>
+                <p>Здесь будут пункты:</p>
+                <ul>
+                    <li>Команды</li>
+                    <li>Таймеры</li>
+                    <li>Модерация</li>
+                    <li>Базовые настройки (как у всех ботов)</li>
+                </ul>
+            </div>
+
+            <!-- Вкладка: Полезные функции (Хаб из скриншота) -->
+            <div id="tab-apps" class="tab-content">
+                <h1>Хаб приложений</h1>
+                <div class="tiles-grid" id="apps-container">
+                    <!-- Плитки генерируются через JS ниже -->
+                </div>
+            </div>
+
+            <!-- Вкладка: Настройки -->
+            <div id="tab-global" class="tab-content">
+                <h1>Глобальные настройки</h1>
+                <h3>Интерфейс</h3>
+                <label>Изменить тему: </label>
+                <select onchange="changeTheme(this.value)">
+                    <option value="dark">Темная</option>
+                    <option value="light">Светлая</option>
+                    <option value="neon">Неон</option>
+                    <option value="ocean">Океан</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Список приложений со скриншота image_d23a16.png
+        const apps = [
+            "Chat Quiz", "Twitch City", "Chat vs Boss", "Song Battle", "AI Roast", "Bomb Defuse",
+            "Поле Чудес", "Guess Word", "Chat Fishing", "Coin Flip", "Pixel Battle", "Кликер",
+            "Контекст", "Словотрон", "Track Queue", "Аукцион", "Giveaway", "OBS Timer",
+            "First Message", "Custom Chat", "Нить", "Доска почёта", "Гляделки", "ГеоБитва",
+            "Скорость реакции", "Флаги", "Виселица", "Анбан LIVE", "Telegram", "Доксинг",
+            "Стихи из чата", "Смехлист", "Gartic Show"
+        ];
+
+        // Генерация плиток
+        const appsContainer = document.getElementById('apps-container');
+        apps.forEach(app => {
+            const tile = document.createElement('div');
+            tile.className = 'tile';
+            // Добавляем псевдо-иконку (квадратик) и текст
+            tile.innerHTML = `<i>■</i><span>${app}</span>`;
+            appsContainer.appendChild(tile);
+        });
+
+        // Смена темы
+        function changeTheme(themeName) {
+            document.body.setAttribute('data-theme', themeName);
+            // Синхронизируем оба селекта (на приветствии и в настройках)
+            const selects = document.querySelectorAll('select');
+            selects.forEach(select => select.value = themeName);
+        }
+
+        // Переход Вход -> Приветствие
+        function goToWelcome() {
+            document.getElementById('screen-login').classList.remove('active-screen');
+            document.getElementById('screen-welcome').classList.add('active-screen');
+        }
+
+        // Переход Приветствие -> Дашборд с анимацией расхождения
+        function goToDashboard() {
+            const left = document.getElementById('welcome-left');
+            const right = document.getElementById('welcome-right');
+            
+            // Анимация раздвигания
+            left.classList.add('slide-left');
+            right.classList.add('slide-right');
+
+            // Ждем завершения анимации (1 секунда) и показываем дашборд
+            setTimeout(() => {
+                document.getElementById('screen-welcome').classList.remove('active-screen');
+                document.getElementById('dashboard').style.display = 'flex';
+            }, 800); // Чуть меньше секунды, чтобы было плавнее
+        }
+
+        // Переключение вкладок в Дашборде
+        function switchTab(tabId) {
+            // Убираем активный класс у всех вкладок и кнопок
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            
+            // Добавляем активный класс нужным
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+    </script>
+</body>
+</html>
