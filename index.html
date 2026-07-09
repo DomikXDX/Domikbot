@@ -214,14 +214,13 @@
     </div>
 
     <script>
-        // Твой новый Client ID успешно применен
-        const TWITCH_CLIENT_ID = '3haltxka809azbtvsyb0v44xdkebja'; 
+        // Твой Client ID изначальный на 32 символа
+        const TWITCH_CLIENT_ID = 'n71zv0v6u6l5uxc50toagqd87a1n7z'; 
         const REDIRECT_URI = window.location.href.split('#')[0]; 
 
         function loginWithTwitch() {
-            // Защита от запуска локально через file://
             if (window.location.protocol === 'file:') {
-                alert("Внимание! Ты открыл файл напрямую с компьютера (file://).\n\nTwitch запрещает авторизацию для локальных файлов. Пожалуйста, загрузи этот файл на GitHub Pages или запусти через локальный сервер (например, Live Server в VS Code), чтобы кнопка входа заработала!");
+                alert("Внимание! Ты открыл файл напрямую с компьютера (file://).\n\nTwitch запрещает авторизацию для локальных файлов. Пожалуйста, загрузи этот файл на GitHub Pages, чтобы кнопка входа заработала!");
                 return;
             }
 
