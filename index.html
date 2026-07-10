@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DomikBot - Панель управления</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Подключаем Socket.io для связи с bot.js -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <style>
         :root {
             --bg-color: #09090b;
@@ -222,7 +224,7 @@
             
             <div class="sidebar-category">Инструменты</div>
             <button class="tab-btn" id="btn-tab-hub" onclick="switchTab('tab-hub', this)">🧩 Хаб приложений</button>
-            <!-- Кнопка Giveaway удалена из сайдбара -->
+            <!-- Кнопка Giveaway удалена из сайдбара, доступна только в Хабе -->
 
             <button class="tab-btn logout-btn" onclick="logout()">🚪 Выйти</button>
         </div>
@@ -392,10 +394,50 @@
         let giveawayActive = false;
         let totalMessagesChecked = 0;
         let registeredUsers = new Set();
-        let simulatedChatInterval = null;
         let winnerResponseTimer = null;
+        let giveawayWinner = null;
 
         const REDIRECT_URI = window.location.origin + window.location.pathname;
+
+        // Подключаемся к нашему WebSocket серверу из bot.js
+        const socket = io('http://localhost:3000');
+
+        // Слушаем реальный чат!
+        socket.on('chatMessage', (data) => {
+            // Проверяем, что сообщение пришло именно с нашего канала
+            if (data.channel !== currentTwitchUser) return;
+
+            // 1. Если идет сбор участников и человек написал ключевое слово (например, "+")
+            if (giveawayActive && !giveawayWinner) {
+                totalMessagesChecked++;
+                document.getElementById('stat-messages').innerText = totalMessagesChecked;
+
+                const keyword = document.getElementById('gv-keyword').value.trim();
+                
+                if (data.message.trim().toLowerCase() === keyword.toLowerCase()) {
+                    if (!registeredUsers.has(data.user)) {
+                        registeredUsers.add(data.user);
+                        
+                        const container = document.getElementById('gv-users-container');
+                        container.innerHTML += `<div class="gv-user-badge">${data.user}</div>`;
+                        
+                        document.getElementById('stat-users').innerText = registeredUsers.size;
+                        document.getElementById('gv-list-counter').innerText = `Участники (${registeredUsers.size})`;
+                        
+                        addConsoleLog(`${data.user} участвует!`, 'highlight');
+                        playNotificationSound(); 
+                    }
+                }
+            }
+
+            // 2. Если победитель выбран, и мы ждем от него любое сообщение
+            if (giveawayActive && giveawayWinner && data.user === giveawayWinner) {
+                clearInterval(winnerResponseTimer);
+                giveawayActive = false;
+                addConsoleLog(`✅ @${data.user} написал в чат! Розыгрыш успешно завершен.`, 'success');
+                playNotificationSound();
+            }
+        });
 
         async function checkAuth() {
             if (window.location.hash) {
@@ -558,8 +600,10 @@
             document.getElementById('gv-live-keyword').innerText = keyword;
 
             giveawayActive = true;
+            giveawayWinner = null;
             totalMessagesChecked = 0;
             registeredUsers.clear();
+            
             document.getElementById('gv-users-container').innerHTML = '';
             document.getElementById('gv-list-counter').innerText = 'Участники (0)';
             document.getElementById('stat-users').innerText = '0';
@@ -568,40 +612,7 @@
             document.getElementById('btn-pick-winner').disabled = false;
 
             document.getElementById('gv-console').innerHTML = '';
-            addConsoleLog(`Подключаемся к чату #${currentTwitchUser}...`);
-            
-            setTimeout(() => {
-                addConsoleLog(`Подключено! Ждём "${keyword}" в чате.`, 'success');
-                startSimulatedChat(keyword);
-            }, 1000);
-        }
-
-        function startSimulatedChat(keyword) {
-            const dummyNicks = ['bratishkinoff', 'buster', 'jesusavgn', 'deepins', 'tenderlybae', 'stray228', 'recrent', 'dmitry_bale', 'Domik_XDX'];
-            
-            simulatedChatInterval = setInterval(() => {
-                if(!giveawayActive) return;
-                
-                totalMessagesChecked += Math.floor(Math.random() * 4) + 1;
-                document.getElementById('stat-messages').innerText = totalMessagesChecked;
-
-                if(Math.random() < 0.35) {
-                    const randomNick = dummyNicks[Math.floor(Math.random() * dummyNicks.length)] + '_' + Math.floor(Math.random()*90 + 10);
-                    
-                    if(!registeredUsers.has(randomNick)) {
-                        registeredUsers.add(randomNick);
-                        
-                        const container = document.getElementById('gv-users-container');
-                        container.innerHTML += `<div class="gv-user-badge">${randomNick}</div>`;
-                        
-                        document.getElementById('stat-users').innerText = registeredUsers.size;
-                        document.getElementById('gv-list-counter').innerText = `Участники (${registeredUsers.size})`;
-                        
-                        addConsoleLog(`${randomNick} участвует!`, 'highlight');
-                        playNotificationSound(); 
-                    }
-                }
-            }, 1500);
+            addConsoleLog(`Подключено к реальному чату! Ждём "${keyword}".`, 'success');
         }
 
         function pickGiveawayWinner() {
@@ -611,40 +622,31 @@
             }
             
             document.getElementById('btn-pick-winner').disabled = true;
-            giveawayActive = false; // Останавливаем прием новых участников
-            clearInterval(simulatedChatInterval);
 
             const usersArray = Array.from(registeredUsers);
-            const winner = usersArray[Math.floor(Math.random() * usersArray.length)];
+            giveawayWinner = usersArray[Math.floor(Math.random() * usersArray.length)];
 
             document.getElementById('stat-winners').innerText = '1';
-            addConsoleLog(`🎉 ПОБЕДИТЕЛЬ ВЫБРАН: @${winner}!`, 'success');
+            addConsoleLog(`🎉 ПОБЕДИТЕЛЬ ВЫБРАН: @${giveawayWinner}!`, 'success');
             
             let timeLeft = parseInt(document.getElementById('gv-time').value) || 20;
-            addConsoleLog(`Ждём сообщение в чат от @${winner}... Ожидание: ${timeLeft} сек.`, 'highlight');
+            addConsoleLog(`Ждём ЛЮБОЕ сообщение в чат от @${giveawayWinner}... Ожидание: ${timeLeft} сек.`, 'highlight');
 
-            // Имитация ожидания ответа в чат от победителя
+            // Таймер ожидания сообщения от победителя
             winnerResponseTimer = setInterval(() => {
                 timeLeft--;
-                
                 if (timeLeft <= 0) {
                     clearInterval(winnerResponseTimer);
-                    addConsoleLog(`❌ @${winner} не успел написать в чат. Время вышло!`, 'highlight');
+                    addConsoleLog(`❌ @${giveawayWinner} не успел написать в чат. Время вышло!`, 'highlight');
+                    giveawayWinner = null;
                     document.getElementById('btn-pick-winner').disabled = false;
-                } else {
-                    // Искусственно симулируем то, что победитель может написать в чат
-                    if(Math.random() < 0.08) {
-                        clearInterval(winnerResponseTimer);
-                        addConsoleLog(`✅ @${winner} написал в чат! Розыгрыш успешно завершен.`, 'success');
-                        playNotificationSound();
-                    }
                 }
             }, 1000);
         }
 
         function resetGiveaway() {
             giveawayActive = false;
-            clearInterval(simulatedChatInterval);
+            giveawayWinner = null;
             clearInterval(winnerResponseTimer);
             document.getElementById('gv-screen-live').style.display = 'none';
             document.getElementById('gv-screen-setup').style.display = 'block';
