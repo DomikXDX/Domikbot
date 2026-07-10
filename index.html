@@ -75,7 +75,6 @@
     </div>
     
     <div class="content">
-        <!-- ТАБ 1: КОМАНДЫ -->
         <div id="tab-commands" class="tab-content active">
             <h1>Управление командами чата</h1>
             <div class="form-group">
@@ -86,7 +85,6 @@
             <div class="item-list" id="commands-list"></div>
         </div>
 
-        <!-- ТАБ 2: ТАЙМЕРЫ -->
         <div id="tab-timers" class="tab-content">
             <h1>Автоматические объявления</h1>
             <div class="form-group" style="align-items: center; background: var(--glass-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--glass-border);">
@@ -100,24 +98,25 @@
             <div class="item-list" id="timers-list"></div>
         </div>
 
-        <!-- Кнопка сохранения -->
         <div class="save-bar">
             <button class="btn" style="background: #10b981; padding: 16px 36px; font-size: 1.1rem;" onclick="saveConfig()">Сохранить настройки бота</button>
         </div>
     </div>
 
     <script>
+        // Адрес локального бота на твоем ПК
+        const BACKEND_URL = 'http://localhost:3000';
         let localConfig = { commands: {}, announcements: [], interval: 10 };
 
         async function loadConfig() {
             try {
-                const res = await fetch('/api/config');
+                const res = await fetch(`${BACKEND_URL}/api/config`);
                 localConfig = await res.json();
                 document.getElementById('timer-interval').value = localConfig.interval || 10;
                 renderCommands();
                 renderTimers();
             } catch (e) {
-                console.error("Ошибка синхронизации с ботом:", e);
+                alert("Не удалось подключиться к боту! Убедись, что на компе запущен start.bat");
             }
         }
 
@@ -151,8 +150,7 @@
             const name = document.getElementById('cmd-name').value.trim();
             const resp = document.getElementById('cmd-response').value.trim();
             if(!name || !resp) return alert("Заполните оба поля!");
-            if(!name.startsWith('!')) return alert("Команда должна начинаться с символа !");
-            
+            if(!name.startsWith('!')) return alert("Команда должна начинаться с !");
             localConfig.commands[name] = resp;
             document.getElementById('cmd-name').value = '';
             document.getElementById('cmd-response').value = '';
@@ -166,7 +164,7 @@
 
         function addTimer() {
             const text = document.getElementById('timer-text').value.trim();
-            if(!text) return alert("Введите текст сообщения!");
+            if(!text) return alert("Введите текст!");
             localConfig.announcements.push(text);
             document.getElementById('timer-text').value = '';
             renderTimers();
@@ -180,15 +178,15 @@
         async function saveConfig() {
             localConfig.interval = parseInt(document.getElementById('timer-interval').value) || 10;
             try {
-                const res = await fetch('/api/config', {
+                const res = await fetch(`${BACKEND_URL}/api/config`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(localConfig)
                 });
-                if (res.ok) alert("Успешно! Бот мгновенно обновил команды и таймеры.");
-                else alert("Ошибка при сохранении.");
+                if (res.ok) alert("Готово! Настройки улетели в твое локальное черное окошко.");
+                else alert("Ошибка сервера.");
             } catch (e) {
-                alert("Ошибка: Не удалось отправить данные боту.");
+                alert("Ошибка связи с локальным ботом.");
             }
         }
 
