@@ -204,7 +204,6 @@
             <div id="tab-hub" class="tab-content">
                 <h1>Хаб приложений</h1>
                 <div class="app-grid">
-                    <!-- Приложения из хаба -->
                     <div class="app-item"><div class="app-icon" style="background:#5b3cc4">🎛️</div><div class="app-title">Chat Quiz</div></div>
                     <div class="app-item"><div class="app-icon" style="background:#236f61">🏢</div><div class="app-title">Twitch City</div></div>
                     <div class="app-item"><div class="app-icon" style="background:#9e2a4b">👾</div><div class="app-title">Chat vs Boss</div></div>
@@ -274,8 +273,6 @@
             if (isLoggedIn === 'true' && token) {
                 document.getElementById('login-page').style.display = 'none';
                 document.getElementById('main-dashboard').style.display = 'flex';
-                
-                // Получаем информацию о пользователе из Twitch API
                 await fetchTwitchUserData(token);
             } else {
                 document.getElementById('login-page').style.display = 'flex';
@@ -294,13 +291,11 @@
                 const data = await res.json();
                 if(data.data && data.data.length > 0) {
                     const user = data.data[0];
-                    currentTwitchUser = user.login; // Запоминаем логин (учетку)
+                    currentTwitchUser = user.login;
                     
-                    // Рендерим профиль в сайдбар
                     document.getElementById('user-name').innerText = user.display_name;
                     document.getElementById('user-avatar').src = user.profile_image_url;
                     
-                    // Загружаем уникальные настройки ДЛЯ ЭТОГО пользователя
                     loadConfig();
                 }
             } catch (e) {
@@ -323,25 +318,21 @@
             checkAuth();
         }
 
-        // Загрузка настроек с привязкой к конкретной учетной записи (?user=...)
         async function loadConfig() {
             try {
                 const res = await fetch(`${BACKEND_URL}/api/config?user=${currentTwitchUser}`);
                 localConfig = await res.json();
                 
-                // Расставляем значения в интерфейс
                 document.getElementById('target-channel').value = localConfig.targetChannel || currentTwitchUser;
                 document.getElementById('timer-interval').value = localConfig.interval || 10;
                 renderCommands();
                 renderTimers();
             } catch (e) {
                 console.log("Сервер оффлайн. Режим симуляции.");
-                // Если сервера нет, по дефолту ставим канал самого юзера
                 document.getElementById('target-channel').value = currentTwitchUser;
             }
         }
 
-        // Сохранение настроек конкретной учетной записи (?user=...)
         async function saveConfig() {
             localConfig.interval = parseInt(document.getElementById('timer-interval').value) || 10;
             localConfig.targetChannel = document.getElementById('target-channel').value.trim().toLowerCase();
