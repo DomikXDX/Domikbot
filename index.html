@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DomikBot - Панель управления</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-color: #09090b;
@@ -24,22 +24,30 @@
         .sidebar {
             width: 280px; background: var(--glass-bg); backdrop-filter: blur(20px);
             border-right: 1px solid var(--glass-border); padding: 30px 20px;
-            display: flex; flex-direction: column; gap: 15px;
+            display: flex; flex-direction: column; gap: 5px;
         }
-        .sidebar h2 { margin-bottom: 40px; text-align: center; font-weight: 800; letter-spacing: -1px; }
+        .sidebar h2 { margin-bottom: 30px; text-align: center; font-weight: 800; letter-spacing: -1px; }
+        
+        .sidebar-category {
+            font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;
+            color: var(--text-muted); margin-top: 20px; margin-bottom: 8px;
+            padding-left: 10px; font-weight: 600;
+        }
+        
         .tab-btn {
             background: transparent; border: 1px solid transparent; color: var(--text-muted);
-            font-size: 1rem; font-weight: 600; text-align: left; cursor: pointer;
-            padding: 16px 20px; border-radius: 12px; transition: all 0.3s;
+            font-size: 0.95rem; font-weight: 600; text-align: left; cursor: pointer;
+            padding: 14px 18px; border-radius: 12px; transition: all 0.3s; display: flex; align-items: center; gap: 10px;
         }
         .tab-btn:hover { background: rgba(255,255,255,0.03); color: var(--text-main); }
         .tab-btn.active { background: rgba(145, 70, 255, 0.15); border: 1px solid rgba(145, 70, 255, 0.3); color: #fff; }
         
-        .content { flex: 1; padding: 50px; overflow-y: auto; }
-        .tab-content { display: none; }
+        .content { flex: 1; padding: 50px; overflow-y: auto; display: flex; flex-direction: column; }
+        .tab-content { display: none; flex: 1; }
         .tab-content.active { display: block; }
-        h1 { font-weight: 800; margin-top: 0; margin-bottom: 30px; }
+        h1 { font-weight: 800; margin-top: 0; margin-bottom: 30px; font-size: 1.8rem; }
         
+        /* Стили настроек */
         .form-group { margin-bottom: 25px; display: flex; gap: 15px; }
         input {
             background: #18181b; border: 1px solid var(--glass-border);
@@ -61,8 +69,31 @@
         }
         .item-info strong { color: var(--accent); margin-right: 10px; font-size: 1.1rem; }
         
+        /* Сетка Хаба приложений */
+        .app-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            gap: 30px 20px;
+            margin-top: 10px;
+        }
+        .app-item {
+            display: flex; flex-direction: column; align-items: center; text-align: center;
+            cursor: pointer; transition: transform 0.2s, filter 0.2s;
+        }
+        .app-item:hover { transform: translateY(-4px); filter: brightness(1.2); }
+        .app-icon {
+            width: 56px; height: 56px; border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px; margin-bottom: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+        }
+        .app-title {
+            font-size: 0.85rem; color: #e4e4e7; font-weight: 500;
+            max-width: 105px; line-height: 1.2;
+        }
+        
         .save-bar {
-            margin-top: 50px; border-top: 1px solid var(--glass-border); padding-top: 25px; display: flex; justify-content: flex-end;
+            margin-top: auto; border-top: 1px solid var(--glass-border); padding-top: 25px; display: flex; justify-content: flex-end;
         }
     </style>
 </head>
@@ -70,11 +101,17 @@
 
     <div class="sidebar">
         <h2>DomikBot Panel</h2>
+        
+        <div class="sidebar-category">Настройки бота</div>
         <button class="tab-btn active" onclick="switchTab('tab-commands', this)">💬 Чат-Команды</button>
         <button class="tab-btn" onclick="switchTab('tab-timers', this)">📢 Объявления (Таймеры)</button>
+        
+        <div class="sidebar-category">Инструменты</div>
+        <button class="tab-btn" onclick="switchTab('tab-hub', this)">🧩 Хаб приложений</button>
     </div>
     
     <div class="content">
+        <!-- ТАБ: КОМАНДЫ -->
         <div id="tab-commands" class="tab-content active">
             <h1>Управление командами чата</h1>
             <div class="form-group">
@@ -85,6 +122,7 @@
             <div class="item-list" id="commands-list"></div>
         </div>
 
+        <!-- ТАБ: ТАЙМЕРЫ -->
         <div id="tab-timers" class="tab-content">
             <h1>Автоматические объявления</h1>
             <div class="form-group" style="align-items: center; background: var(--glass-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--glass-border);">
@@ -98,13 +136,59 @@
             <div class="item-list" id="timers-list"></div>
         </div>
 
+        <!-- ТАБ: ХАБ ПРИЛОЖЕНИЙ -->
+        <div id="tab-hub" class="tab-content">
+            <h1>Хаб приложений</h1>
+            <div class="app-grid">
+                <!-- Ряд 1 -->
+                <div class="app-item"><div class="app-icon" style="background:#5b3cc4">🎛️</div><div class="app-title">Chat Quiz</div></div>
+                <div class="app-item"><div class="app-icon" style="background:#236f61">🏢</div><div class="app-title">Twitch City</div></div>
+                <div class="app-item"><div class="app-icon" style="background:#9e2a4b">👾</div><div class="app-title">Chat vs Boss</div></div>
+                <div class="app-item"><div class="app-icon" style="background:#5b3cc4">🎵</div><div class="app-title">Song Battle</div></div>
+                <div class="app-item"><div class="app-icon" style="background:#d9531e">🔥</div><div class="app-title">AI Roast</div></div>
+                <div class="app-item"><div class="app-icon" style="background:#b83232">💣</div><div class="app-title">Bomb Defuse</div></div>
+                <!-- Ряд 2 -->
+                <div class="app-item"><div class="app-icon" style="background:#9a8b2c">🌐</div><div class="app-title">Поле Чудес</div></div>
+                <div class="app-item"><div class="app-icon" style="background:#1d8553">💡</div><div class="app-title">Guess Word</div></div>
+                <div class="app-item"><div class="app-icon" style="background:#1d62a1">🎣</div><div class="app-title">Chat Fishing</div></div>
+                <div class="app-item"><div class="app-icon" style="background:#6e7a27">🪙</div><div class="app-title">Coin Flip</div></div>
+                <div class="app-item"><div class="app-icon" style="background:#5a5e63">🎨</div><div class="app-title">Pixel Battle</div></div>
+                <div class="app-item"><div class="app-icon" style="background:#5b3cc4">🖱️</div><div class="app-title">Кликер</div></div>
+                <!-- Ряд 3 -->
+                <div class="app-item"><div class="app-icon" style="background:#1a853b">⭐</div><div class="app-title">Контекст</div></div>
+                <div class="app-item"><div class="app-icon" style="background:#1d8ca1">🔮</div><div class="app-title">Словотрон</div></div>
+                <div class="app-item"><div class="app-icon" style="background:#8c3cc4">☑️</div><div class="app-title">Track Queue</div></div>
+                <div class="app-item"><div class="app-icon" style="background:#9e2a2a">🔊</div><div class="app-title">Аукцион</div></div>
+                <div class="app-item"><div class="app-icon" style="background:#9a712c">🎁</div><div class="app-title">Giveaway</div></div>
+                <div class="app-item"><div class="app-icon" style="background:#9e2a2a">🕒</div><div class="app-title">OBS Timer</div></div>
+                <!-- Ряд 4 -->
+                <div class="app-item"><div class="app-icon" style="background:#612a9e">🚀</div><div class="app-title">First Message</div></div>
+                <div class="app-item"><div class="app-icon" style="background:#9a8b2c">💬</div><div class="app-title">Custom Chat</div></div>
+                <div class="app-item"><div class="app-icon" style="background:#4c5bc4">👥</div><div class="app-title">Нить</div></div>
+                <div class="app-item"><div class="app-icon" style="background:#c49b1a">🏆</div><div class="app-title">Доска почёта</div></div>
+                <div class="app-item"><div class="app-icon" style="background:#5b3cc4">👁️</div><div class="app-title">Гляделки</div></div>
+                <div class="app-item"><div class="app-icon" style="background:#1a853b">🗺️</div><div class="app-title">ГеоБитва</div></div>
+                <!-- Ряд 5 -->
+                <div class="app-item"><div class="app-icon" style="background:#c49b1a">⚡</div><div class="app-title">Скорость реакции</div></div>
+                <div class="app-item"><div class="app-icon" style="background:#2a619e">🏳️</div><div class="app-title">Флаги</div></div>
+                <div class="app-item"><div class="app-icon" style="background:#d96e1e">🪓</div><div class="app-title">Виселица</div></div>
+                <div class="app-item"><div class="app-icon" style="background:#612a9e">🛡️</div><div class="app-title">Анбан LIVE</div></div>
+                <div class="app-item"><div class="app-icon" style="background:#1d8ca1">✈️</div><div class="app-title">Telegram</div></div>
+                <div class="app-item"><div class="app-icon" style="background:#114f24">⚠️</div><div class="app-title">Доксинг</div></div>
+                <!-- Ряд 6 -->
+                <div class="app-item"><div class="app-icon" style="background:#5b3cc4">📜</div><div class="app-title">Стихи из чата</div></div>
+                <div class="app-item"><div class="app-icon" style="background:#d9531e">✅</div><div class="app-title">Смехлист</div></div>
+                <div class="app-item"><div class="app-icon" style="background:#d92e73"> Brush 🖌️</div><div class="app-title">Gartic Show</div></div>
+            </div>
+        </div>
+
+        <!-- Кнопка сохранения -->
         <div class="save-bar">
             <button class="btn" style="background: #10b981; padding: 16px 36px; font-size: 1.1rem;" onclick="saveConfig()">Сохранить настройки бота</button>
         </div>
     </div>
 
     <script>
-        // Адрес локального бота на твоем ПК
         const BACKEND_URL = 'http://localhost:3000';
         let localConfig = { commands: {}, announcements: [], interval: 10 };
 
@@ -116,7 +200,7 @@
                 renderCommands();
                 renderTimers();
             } catch (e) {
-                alert("Не удалось подключиться к боту! Убедись, что на компе запущен start.bat");
+                console.log("Локальный бот не запущен на ПК, интерфейс работает автономно.");
             }
         }
 
@@ -183,10 +267,10 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(localConfig)
                 });
-                if (res.ok) alert("Готово! Настройки улетели в твое локальное черное окошко.");
-                else alert("Ошибка сервера.");
+                if (res.ok) alert("Настройки успешно улетели в твое черное окошко локального бота!");
+                else alert("Ошибка сохранения.");
             } catch (e) {
-                alert("Ошибка связи с локальным ботом.");
+                alert("Ошибка связи: Твой локальный бот (start.bat) сейчас запущен?");
             }
         }
 
@@ -195,6 +279,14 @@
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             btn.classList.add('active');
+            
+            // Прячем нижнюю плашку сохранения, если зашли в Хаб
+            const saveBar = document.querySelector('.save-bar');
+            if (tabId === 'tab-hub') {
+                saveBar.style.display = 'none';
+            } else {
+                saveBar.style.display = 'flex';
+            }
         }
 
         window.onload = loadConfig;
