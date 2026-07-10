@@ -308,7 +308,8 @@
 
         function loginWithTwitch() {
             const scopes = 'user:read:email chat:read chat:edit';
-            window.location.href = `https://id.twitch.tv/oauth2/authorize?client_id=${TWITCH_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=${encodeURIComponent(scopes)}`;
+            // ДОБАВЛЕНО: &force_verify=true принудительно заставит Twitch запрашивать ввод данных аккаунта
+            window.location.href = `https://id.twitch.tv/oauth2/authorize?client_id=${TWITCH_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=${encodeURIComponent(scopes)}&force_verify=true`;
         }
 
         function logout() {
