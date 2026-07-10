@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DomikBot - Авторизация</title>
+    <title>DomikBot - Панель управления</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -66,8 +66,19 @@
             border-right: 1px solid var(--glass-border); padding: 30px 20px;
             display: flex; flex-direction: column; gap: 5px; box-sizing: border-box;
         }
-        .sidebar h2 { margin-bottom: 30px; text-align: center; font-weight: 800; letter-spacing: -1px; }
-        .sidebar-category { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-top: 20px; margin-bottom: 8px; padding-left: 10px; font-weight: 600; }
+        .sidebar h2 { margin-bottom: 10px; text-align: center; font-weight: 800; letter-spacing: -1px; }
+        
+        /* Профиль пользователя в сайдбаре */
+        .user-profile {
+            display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.03);
+            padding: 12px; border-radius: 14px; border: 1px solid var(--glass-border); margin-bottom: 20px;
+        }
+        .user-avatar { width: 40px; height: 40px; border-radius: 50%; background: #27272a; object-fit: cover; }
+        .user-info { display: flex; flex-direction: column; overflow: hidden; }
+        .user-name { font-size: 0.95rem; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .user-status { font-size: 0.75rem; color: var(--text-muted); }
+
+        .sidebar-category { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-top: 15px; margin-bottom: 8px; padding-left: 10px; font-weight: 600; }
         .tab-btn { background: transparent; border: 1px solid transparent; color: var(--text-muted); font-size: 0.95rem; font-weight: 600; text-align: left; cursor: pointer; padding: 14px 18px; border-radius: 12px; transition: all 0.3s; display: flex; align-items: center; gap: 10px; }
         .tab-btn:hover { background: rgba(255,255,255,0.03); color: var(--text-main); }
         .tab-btn.active { background: rgba(145, 70, 255, 0.15); border: 1px solid rgba(145, 70, 255, 0.3); color: #fff; }
@@ -78,8 +89,15 @@
         .content { flex: 1; padding: 50px; overflow-y: auto; display: flex; flex-direction: column; }
         .tab-content { display: none; flex: 1; }
         .tab-content.active { display: block; }
-        h1 { font-weight: 800; margin-top: 0; margin-bottom: 30px; font-size: 1.8rem; }
+        h1 { font-weight: 800; margin-top: 0; margin-bottom: 25px; font-size: 1.8rem; }
         
+        /* Панель настроек канала */
+        .channel-settings-bar {
+            background: linear-gradient(135deg, rgba(145, 70, 255, 0.1), transparent);
+            border: 1px solid rgba(145, 70, 255, 0.2); padding: 20px; border-radius: 16px; margin-bottom: 30px;
+        }
+        .channel-settings-bar h4 { margin: 0 0 10px 0; font-size: 1.1rem; color: #fff; }
+
         .form-group { margin-bottom: 25px; display: flex; gap: 15px; }
         input { background: #18181b; border: 1px solid var(--glass-border); color: white; padding: 14px 18px; border-radius: 10px; font-size: 1rem; outline: none; flex: 1; }
         input:focus { border-color: var(--accent); }
@@ -125,7 +143,16 @@
     <!-- ================= ГЛАВНАЯ СТРАНИЦА (ПАНЕЛЬ) ================= -->
     <div id="main-dashboard">
         <div class="sidebar">
-            <h2>DomikBot Panel</h2>
+            <h2>DomikBot</h2>
+            
+            <!-- Инфо вошедшего юзера -->
+            <div class="user-profile">
+                <img src="" id="user-avatar" class="user-avatar" alt="Avatar">
+                <div class="user-info">
+                    <span id="user-name" class="user-name">Загрузка...</span>
+                    <span class="user-status">Учетная запись</span>
+                </div>
+            </div>
             
             <div class="sidebar-category">Настройки бота</div>
             <button class="tab-btn active" onclick="switchTab('tab-commands', this)">💬 Чат-Команды</button>
@@ -138,6 +165,16 @@
         </div>
         
         <div class="content">
+            
+            <!-- ГЛОБАЛЬНЫЕ НАСТРОЙКИ КАНАЛА ДЛЯ ВСЕХ ТАБОВ -->
+            <div class="channel-settings-bar">
+                <h4>Настройки подключения бота</h4>
+                <div style="display: flex; gap: 15px; align-items: center;">
+                    <div style="color: var(--text-muted); font-size: 0.95rem; white-space: nowrap;">Бот должен зайти на канал стримера:</div>
+                    <input type="text" id="target-channel" placeholder="Укажи никнейм стримера (например: bratishkinoff)" style="padding: 10px 14px;">
+                </div>
+            </div>
+
             <!-- ТАБ: КОМАНДЫ -->
             <div id="tab-commands" class="tab-content active">
                 <h1>Управление командами чата</h1>
@@ -167,6 +204,7 @@
             <div id="tab-hub" class="tab-content">
                 <h1>Хаб приложений</h1>
                 <div class="app-grid">
+                    <!-- Приложения из хаба -->
                     <div class="app-item"><div class="app-icon" style="background:#5b3cc4">🎛️</div><div class="app-title">Chat Quiz</div></div>
                     <div class="app-item"><div class="app-icon" style="background:#236f61">🏢</div><div class="app-title">Twitch City</div></div>
                     <div class="app-item"><div class="app-icon" style="background:#9e2a4b">👾</div><div class="app-title">Chat vs Boss</div></div>
@@ -211,70 +249,124 @@
     </div>
 
     <script>
-        // Твой персональный Twitch Client ID
         const TWITCH_CLIENT_ID = 'n71zv0v6u6l5uxc50toagqd87a1n7z'; 
-        
         const BACKEND_URL = 'http://localhost:3000';
-        let localConfig = { commands: {}, announcements: [], interval: 10 };
+        
+        let localConfig = { targetChannel: '', commands: {}, announcements: [], interval: 10 };
+        let currentTwitchUser = ''; 
 
-        // Скрипт сам определяет адрес сайта (например, твой-логин.github.io/репозиторий)
         const REDIRECT_URI = window.location.origin + window.location.pathname;
 
-        function checkAuth() {
-            // 1. Проверяем, вернул ли Twitch токен в хэше URL
+        async function checkAuth() {
             if (window.location.hash) {
                 const params = new URLSearchParams(window.location.hash.substring(1));
                 const token = params.get('access_token');
                 if (token) {
                     localStorage.setItem('domik_bot_token', token);
                     localStorage.setItem('domik_bot_logged_in', 'true');
-                    // Чистим хэш-ссылку для аккуратного вида страницы
                     history.replaceState(null, null, window.location.pathname);
                 }
             }
 
-            // 2. Рендерим нужный экран в зависимости от статуса авторизации
             const isLoggedIn = localStorage.getItem('domik_bot_logged_in');
-            if (isLoggedIn === 'true') {
+            const token = localStorage.getItem('domik_bot_token');
+
+            if (isLoggedIn === 'true' && token) {
                 document.getElementById('login-page').style.display = 'none';
                 document.getElementById('main-dashboard').style.display = 'flex';
-                loadConfig();
+                
+                // Получаем информацию о пользователе из Twitch API
+                await fetchTwitchUserData(token);
             } else {
                 document.getElementById('login-page').style.display = 'flex';
                 document.getElementById('main-dashboard').style.display = 'none';
             }
         }
 
+        async function fetchTwitchUserData(token) {
+            try {
+                const res = await fetch('https://api.twitch.tv/helix/users', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Client-Id': TWITCH_CLIENT_ID
+                    }
+                });
+                const data = await res.json();
+                if(data.data && data.data.length > 0) {
+                    const user = data.data[0];
+                    currentTwitchUser = user.login; // Запоминаем логин (учетку)
+                    
+                    // Рендерим профиль в сайдбар
+                    document.getElementById('user-name').innerText = user.display_name;
+                    document.getElementById('user-avatar').src = user.profile_image_url;
+                    
+                    // Загружаем уникальные настройки ДЛЯ ЭТОГО пользователя
+                    loadConfig();
+                }
+            } catch (e) {
+                console.error("Ошибка Twitch API:", e);
+                document.getElementById('user-name').innerText = "Demo_User";
+                currentTwitchUser = 'demo_user';
+                loadConfig();
+            }
+        }
+
         function loginWithTwitch() {
-            // Запрашиваем базовые права (чтение и отправка сообщений в чат)
             const scopes = 'user:read:email chat:read chat:edit';
-            const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${TWITCH_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=${encodeURIComponent(scopes)}`;
-            
-            // Перенаправление на Twitch
-            window.location.href = authUrl;
+            window.location.href = `https://id.twitch.tv/oauth2/authorize?client_id=${TWITCH_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=${encodeURIComponent(scopes)}`;
         }
 
         function logout() {
             localStorage.removeItem('domik_bot_logged_in');
             localStorage.removeItem('domik_bot_token');
+            currentTwitchUser = '';
             checkAuth();
         }
 
+        // Загрузка настроек с привязкой к конкретной учетной записи (?user=...)
         async function loadConfig() {
             try {
-                const res = await fetch(`${BACKEND_URL}/api/config`);
+                const res = await fetch(`${BACKEND_URL}/api/config?user=${currentTwitchUser}`);
                 localConfig = await res.json();
+                
+                // Расставляем значения в интерфейс
+                document.getElementById('target-channel').value = localConfig.targetChannel || currentTwitchUser;
                 document.getElementById('timer-interval').value = localConfig.interval || 10;
                 renderCommands();
                 renderTimers();
             } catch (e) {
-                console.log("Локальный сервер бота отключен. Панель работает в демо-режиме.");
+                console.log("Сервер оффлайн. Режим симуляции.");
+                // Если сервера нет, по дефолту ставим канал самого юзера
+                document.getElementById('target-channel').value = currentTwitchUser;
+            }
+        }
+
+        // Сохранение настроек конкретной учетной записи (?user=...)
+        async function saveConfig() {
+            localConfig.interval = parseInt(document.getElementById('timer-interval').value) || 10;
+            localConfig.targetChannel = document.getElementById('target-channel').value.trim().toLowerCase();
+            
+            if(!localConfig.targetChannel) {
+                alert("Укажи целевой канал стримера!");
+                return;
+            }
+
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/config?user=${currentTwitchUser}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(localConfig)
+                });
+                if (res.ok) alert(`Настройки для аккаунта ${currentTwitchUser} успешно сохранены! Бот подключится к каналу: ${localConfig.targetChannel}`);
+            } catch (e) {
+                alert("Ошибка: Запусти локальный бэкенд бота (start.bat)");
             }
         }
 
         function renderCommands() {
             const container = document.getElementById('commands-list');
             container.innerHTML = '';
+            if(!localConfig.commands) localConfig.commands = {};
             for (const [cmd, resp] of Object.entries(localConfig.commands)) {
                 container.innerHTML += `
                     <div class="item-row">
@@ -288,6 +380,7 @@
         function renderTimers() {
             const container = document.getElementById('timers-list');
             container.innerHTML = '';
+            if(!localConfig.announcements) localConfig.announcements = [];
             localConfig.announcements.forEach((text, index) => {
                 container.innerHTML += `
                     <div class="item-row">
@@ -324,20 +417,6 @@
         function deleteTimer(index) {
             localConfig.announcements.splice(index, 1);
             renderTimers();
-        }
-
-        async function saveConfig() {
-            localConfig.interval = parseInt(document.getElementById('timer-interval').value) || 10;
-            try {
-                const res = await fetch(`${BACKEND_URL}/api/config`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(localConfig)
-                });
-                if (res.ok) alert("Настройки сохранены!");
-            } catch (e) {
-                alert("Ошибка: Убедись, что на ПК запущен start.bat");
-            }
         }
 
         function switchTab(tabId, btn) {
