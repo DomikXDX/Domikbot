@@ -85,12 +85,6 @@
         .tab-content { display: none; flex: 1; }
         .tab-content.active { display: flex; flex-direction: column; }
         h1 { font-weight: 800; margin-top: 0; margin-bottom: 25px; font-size: 1.8rem; }
-        
-        .channel-settings-bar {
-            background: linear-gradient(135deg, rgba(145, 70, 255, 0.05), transparent);
-            border: 1px solid var(--glass-border); padding: 18px; border-radius: 16px; margin-bottom: 25px;
-        }
-        .channel-settings-bar h4 { margin: 0 0 10px 0; font-size: 1rem; color: #fff; }
 
         .form-group { margin-bottom: 25px; display: flex; gap: 15px; }
         input, select { background: #18181b; border: 1px solid var(--glass-border); color: white; padding: 14px 18px; border-radius: 10px; font-size: 1rem; outline: none; flex: 1; font-family: inherit; }
@@ -228,22 +222,13 @@
             
             <div class="sidebar-category">Инструменты</div>
             <button class="tab-btn" id="btn-tab-hub" onclick="switchTab('tab-hub', this)">🧩 Хаб приложений</button>
-            <button class="tab-btn" id="btn-tab-gv" onclick="switchTab('tab-giveaway', this)">🎁 Giveaway (Розыгрыш)</button>
+            <!-- Кнопка Giveaway удалена из сайдбара -->
 
             <button class="tab-btn logout-btn" onclick="logout()">🚪 Выйти</button>
         </div>
         
         <div class="content">
             
-            <!-- ГЛОБАЛЬНЫЕ НАСТРОЙКИ КАНАЛА -->
-            <div class="channel-settings-bar" id="global-channel-bar">
-                <h4>Настройки подключения бота</h4>
-                <div style="display: flex; gap: 15px; align-items: center;">
-                    <div style="color: var(--text-muted); font-size: 0.95rem; white-space: nowrap;">Бот должен зайти на канал стримера:</div>
-                    <input type="text" id="target-channel" placeholder="Укажи никнейм стримера" style="padding: 10px 14px;">
-                </div>
-            </div>
-
             <!-- ТАБ: КОМАНДЫ -->
             <div id="tab-commands" class="tab-content active">
                 <h1>Управление командами чата</h1>
@@ -308,18 +293,18 @@
                         </div>
 
                         <div class="gv-input-block">
-                            <span class="gv-label">Ключевое слово (Что писать в чате)</span>
-                            <input type="text" id="gv-keyword" value="!giveaway">
+                            <span class="gv-label">Ключевое слово для участия (что писать зрителям)</span>
+                            <input type="text" id="gv-keyword" value="+">
                         </div>
 
                         <div class="gv-inline-inputs">
                             <div>
-                                <span class="gv-label">Время ответа (сек)</span>
+                                <span class="gv-label">Время на ответ победителя (сек)</span>
                                 <input type="number" id="gv-time" value="20">
                             </div>
                             <div>
                                 <span class="gv-label">Макс. победителей</span>
-                                <input type="number" id="gv-max-winners" value="1">
+                                <input type="number" id="gv-max-winners" value="1" disabled>
                             </div>
                         </div>
 
@@ -335,14 +320,14 @@
                         <button class="btn-start-gv" onclick="startGiveawayCollection()">Начать сбор</button>
                         
                         <div class="gv-hint-text">
-                            Зрители пишут ключевое слово в чат, чтобы участвовать. Потом ты выбираешь победителя — он должен ответить в чат за указанное время!
+                            Зрители пишут "+" в чат, чтобы участвовать. Когда ты выберешь победителя — ему нужно будет написать любое сообщение в чат за указанное время, чтобы забрать приз!
                         </div>
                     </div>
 
                     <!-- ЭКРАН 2 И 3: КОНСОЛЬ СБОРА -->
                     <div id="gv-screen-live" class="gv-card" style="display: none;">
                         <div style="text-align: center; font-size: 0.9rem; margin-bottom: 20px; color: var(--text-muted);">
-                            Ключевое слово: <strong style="background: rgba(245,166,35,0.15); color: var(--giveaway-accent); padding: 4px 10px; border-radius: 6px;" id="gv-live-keyword">!giveaway</strong>
+                            Ключевое слово: <strong style="background: rgba(245,166,35,0.15); color: var(--giveaway-accent); padding: 4px 10px; border-radius: 6px;" id="gv-live-keyword">+</strong>
                         </div>
 
                         <div class="gv-stats-grid">
@@ -361,7 +346,7 @@
                         </div>
 
                         <div class="gv-action-row">
-                            <button class="btn-pick-winner" onclick="pickGiveawayWinner()">⬛ Выбрать победителя</button>
+                            <button class="btn-pick-winner" id="btn-pick-winner" onclick="pickGiveawayWinner()">⬛ Выбрать победителя</button>
                             <button class="btn-reset-gv" onclick="resetGiveaway()"><span style="font-size: 1.1rem;">🔄</span> Сбросить</button>
                         </div>
 
@@ -398,7 +383,7 @@
         const TWITCH_CLIENT_ID = 'n71zv0v6u6l5uxc50toagqd87a1n7z'; 
         const BACKEND_URL = 'http://localhost:3000';
         
-        let localConfig = { targetChannel: '', commands: {}, announcements: [], interval: 10 };
+        let localConfig = { commands: {}, announcements: [], interval: 10 };
         let currentTwitchUser = 'domik_xdx'; 
 
         const soundsList = ['Windows 10', 'Windows 7', 'Телефон', 'Retro Beep'];
@@ -408,6 +393,7 @@
         let totalMessagesChecked = 0;
         let registeredUsers = new Set();
         let simulatedChatInterval = null;
+        let winnerResponseTimer = null;
 
         const REDIRECT_URI = window.location.origin + window.location.pathname;
 
@@ -474,10 +460,11 @@
             window.location.href = `https://id.twitch.tv/oauth2/authorize?client_id=${TWITCH_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=${encodeURIComponent(scopes)}&force_verify=true`;
         }
 
+        // Кнопка выхода полностью сбрасывает состояние и очищает URL
         function logout() {
             localStorage.removeItem('domik_bot_logged_in');
             localStorage.removeItem('domik_bot_token');
-            window.location.reload();
+            window.location.href = window.location.pathname;
         }
 
         // ================= СИНТЕЗ ЗВУКОВ ОПОВЕЩЕНИЙ =================
@@ -537,7 +524,12 @@
 
         // ================= ФУНКЦИОНАЛ РОЗЫГРЫША =================
         function openGiveawayApp() {
-            switchTab('tab-giveaway', document.getElementById('btn-tab-gv'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-giveaway').classList.add('active');
+            
+            const saveBar = document.getElementById('global-save-bar');
+            if (saveBar) saveBar.style.display = 'none';
         }
 
         function addConsoleLog(text, type = '') {
@@ -573,9 +565,10 @@
             document.getElementById('stat-users').innerText = '0';
             document.getElementById('stat-messages').innerText = '0';
             document.getElementById('stat-winners').innerText = '0';
+            document.getElementById('btn-pick-winner').disabled = false;
 
             document.getElementById('gv-console').innerHTML = '';
-            addConsoleLog(`Подключаемся к #${currentTwitchUser}...`);
+            addConsoleLog(`Подключаемся к чату #${currentTwitchUser}...`);
             
             setTimeout(() => {
                 addConsoleLog(`Подключено! Ждём "${keyword}" в чате.`, 'success');
@@ -616,44 +609,75 @@
                 alert('Нет участников для выбора победителя!');
                 return;
             }
-            giveawayActive = false;
+            
+            document.getElementById('btn-pick-winner').disabled = true;
+            giveawayActive = false; // Останавливаем прием новых участников
             clearInterval(simulatedChatInterval);
 
             const usersArray = Array.from(registeredUsers);
             const winner = usersArray[Math.floor(Math.random() * usersArray.length)];
 
             document.getElementById('stat-winners').innerText = '1';
-            
             addConsoleLog(`🎉 ПОБЕДИТЕЛЬ ВЫБРАН: @${winner}!`, 'success');
-            alert(`Победитель определен: @${winner}\nУ него есть ${document.getElementById('gv-time').value} секунд, чтобы написать в чат!`);
+            
+            let timeLeft = parseInt(document.getElementById('gv-time').value) || 20;
+            addConsoleLog(`Ждём сообщение в чат от @${winner}... Ожидание: ${timeLeft} сек.`, 'highlight');
+
+            // Имитация ожидания ответа в чат от победителя
+            winnerResponseTimer = setInterval(() => {
+                timeLeft--;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(winnerResponseTimer);
+                    addConsoleLog(`❌ @${winner} не успел написать в чат. Время вышло!`, 'highlight');
+                    document.getElementById('btn-pick-winner').disabled = false;
+                } else {
+                    // Искусственно симулируем то, что победитель может написать в чат
+                    if(Math.random() < 0.08) {
+                        clearInterval(winnerResponseTimer);
+                        addConsoleLog(`✅ @${winner} написал в чат! Розыгрыш успешно завершен.`, 'success');
+                        playNotificationSound();
+                    }
+                }
+            }, 1000);
         }
 
         function resetGiveaway() {
             giveawayActive = false;
             clearInterval(simulatedChatInterval);
+            clearInterval(winnerResponseTimer);
             document.getElementById('gv-screen-live').style.display = 'none';
             document.getElementById('gv-screen-setup').style.display = 'block';
+            document.getElementById('btn-pick-winner').disabled = false;
         }
 
         // ================= СТАНДАРТНЫЙ ФУНКЦИОНАЛ АДМИНКИ =================
         async function loadConfig() {
             try {
+                // Пытаемся получить настройки с сервера для конкретного стримера
                 const res = await fetch(`${BACKEND_URL}/api/config?user=${currentTwitchUser}`);
                 localConfig = await res.json();
-                document.getElementById('target-channel').value = localConfig.targetChannel || currentTwitchUser;
-                document.getElementById('timer-interval').value = localConfig.interval || 10;
-                renderCommands();
-                renderTimers();
             } catch (e) {
-                document.getElementById('target-channel').value = currentTwitchUser;
+                // Если бэкенда нет, берем из локального хранилища браузера, сохраняя настройки раздельно для каждого аккаунта
+                const savedConf = localStorage.getItem(`domik_bot_config_${currentTwitchUser}`);
+                if (savedConf) {
+                    localConfig = JSON.parse(savedConf);
+                }
             }
+            
+            if(!localConfig.commands) localConfig.commands = {};
+            if(!localConfig.announcements) localConfig.announcements = [];
+            
+            document.getElementById('timer-interval').value = localConfig.interval || 10;
+            renderCommands();
+            renderTimers();
         }
 
         async function saveConfig() {
             localConfig.interval = parseInt(document.getElementById('timer-interval').value) || 10;
-            localConfig.targetChannel = document.getElementById('target-channel').value.trim().toLowerCase();
-            if(!localConfig.targetChannel) { alert("Укажи целевой канал!"); return; }
+            
             try {
+                // Отправляем настройки на сервер под именем учетки стримера
                 const res = await fetch(`${BACKEND_URL}/api/config?user=${currentTwitchUser}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -661,7 +685,9 @@
                 });
                 if (res.ok) alert("Настройки сохранены!");
             } catch (e) {
-                alert("Ошибка соединения с бэкендом бота.");
+                // Если сервер недоступен - сохраняем локально, привязывая к конкретному нику
+                localStorage.setItem(`domik_bot_config_${currentTwitchUser}`, JSON.stringify(localConfig));
+                alert("Настройки успешно сохранены (в браузере для аккаунта " + currentTwitchUser + ")!");
             }
         }
 
@@ -717,16 +743,13 @@
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
-            btn.classList.add('active');
+            if(btn) btn.classList.add('active');
             
             const saveBar = document.getElementById('global-save-bar');
-            const channelBar = document.getElementById('global-channel-bar');
             if (tabId === 'tab-giveaway' || tabId === 'tab-hub') {
-                saveBar.style.display = 'none';
-                channelBar.style.display = 'none';
+                if (saveBar) saveBar.style.display = 'none';
             } else {
-                saveBar.style.display = 'flex';
-                channelBar.style.display = 'block';
+                if (saveBar) saveBar.style.display = 'flex';
             }
         }
 
